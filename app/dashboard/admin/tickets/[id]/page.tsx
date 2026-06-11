@@ -1,17 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminNav } from "@/lib/admin-nav";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { AdminTicketDetail } from "@/components/tickets/admin-ticket-detail";
 import { Ticket } from "@/lib/types";
-
-const adminNav = [
-  { href: "/dashboard/admin", label: "Tickets", icon: "🎫" },
-  { href: "/dashboard/admin/users", label: "Users", icon: "👥" },
-  { href: "/dashboard/admin/customers", label: "Customers", icon: "👤" },
-  { href: "/dashboard/admin/departments", label: "Departments", icon: "🏢" },
-  { href: "/dashboard/admin/reports", label: "Reports", icon: "📊" },
-];
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -39,7 +32,7 @@ export default async function AdminTicketPage({ params }: PageProps) {
     .single();
 
   if (error || !ticket) {
-    redirect("/dashboard/admin");
+    redirect("/dashboard/admin/tickets");
   }
 
   return (

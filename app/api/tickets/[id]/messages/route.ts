@@ -8,7 +8,7 @@ async function getTicketAccess(id: string, userId: string, role: string) {
   const supabase = createAdminClient();
   const { data: ticket, error } = await supabase
     .from("tickets")
-    .select("id, customer_id, agent_id")
+    .select("id, customer_id, agent_id, status")
     .eq("id", id)
     .single();
 
@@ -51,6 +51,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   const access = await getTicketAccess(id, auth.user.id, auth.user.role);
   if ("error" in access && access.error) return access.error;
+
+  if (access.ticket.status === "closed") {
+    return apiError("Messaging is closed for this ticket");
+  }
 
   const body = await request.json();
   const message = (body.message as string)?.trim();

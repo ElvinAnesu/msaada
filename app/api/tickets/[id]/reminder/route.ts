@@ -22,7 +22,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
   if (!ticket.agent_id) {
     return apiError("No agent assigned to this ticket yet");
   }
-  if (["resolved", "closed"].includes(ticket.status)) {
+  if (ticket.status === "closed") {
     return apiError("Cannot send reminder on a closed ticket");
   }
 

@@ -47,7 +47,6 @@ export const statusSchema = z.object({
     "assigned",
     "in_progress",
     "escalated",
-    "resolved",
     "closed",
   ]),
 });
@@ -70,6 +69,10 @@ export const createAgentSchema = z.object({
 
 export const departmentSchema = z.object({
   name: z.string().min(2, "Department name is required"),
+});
+
+export const categorySchema = z.object({
+  name: z.string().min(2, "Category name is required"),
 });
 
 export const updateCustomerSchema = z
@@ -117,7 +120,6 @@ export const reportFilterSchema = z.object({
       "assigned",
       "in_progress",
       "escalated",
-      "resolved",
       "closed",
     ])
     .optional(),
@@ -129,4 +131,5 @@ export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 export type GuestTicketInput = z.infer<typeof guestTicketSchema>;
 export type CreateAgentInput = z.infer<typeof createAgentSchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
+export type CategoryInput = z.infer<typeof categorySchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;

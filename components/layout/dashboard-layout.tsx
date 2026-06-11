@@ -47,7 +47,10 @@ export function DashboardLayout({
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <>
       {navItems.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+        const active =
+          item.href === "/dashboard/agent" || item.href === "/dashboard/admin"
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link
             key={item.href}
@@ -160,7 +163,10 @@ export function DashboardLayout({
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-slate-200 bg-white lg:hidden">
         {navItems.slice(0, 4).map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active =
+            item.href === "/dashboard/agent" || item.href === "/dashboard/admin"
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.href}

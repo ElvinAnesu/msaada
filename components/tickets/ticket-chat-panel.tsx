@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { TicketMessage } from "@/lib/types";
-import { formatDate } from "@/lib/utils";
+import { TicketMessage, TicketStatus } from "@/lib/types";
+import { createBrowserClient } from "@/lib/supabase/client";
+import { formatDate, isTicketClosed } from "@/lib/utils";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,19 +12,29 @@ import { cn } from "@/lib/utils";
 interface TicketChatPanelProps {
   ticketId: string;
   currentUserId: string;
+  ticketStatus: TicketStatus;
   canSend?: boolean;
 }
 
 export function TicketChatPanel({
   ticketId,
   currentUserId,
+  ticketStatus,
   canSend = true,
 }: TicketChatPanelProps) {
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [liveStatus, setLiveStatus] = useState<TicketStatus>(ticketStatus);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLiveStatus(ticketStatus);
+  }, [ticketStatus]);
+
+  const messagingClosed = isTicketClosed(liveStatus);
+  const canSendMessage = canSend && !messagingClosed;
 
   const loadMessages = useCallback(async () => {
     try {
@@ -31,7 +42,7 @@ export function TicketChatPanel({
       const data = await res.json();
       if (res.ok) setMessages(data.messages || []);
     } catch {
-      // silent poll failure
+      // silent fetch failure
     } finally {
       setLoading(false);
     }
@@ -39,9 +50,49 @@ export function TicketChatPanel({
 
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 8000);
-    return () => clearInterval(interval);
   }, [loadMessages]);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+
+    const messagesChannel = supabase
+      .channel(`ticket-messages-${ticketId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "ticket_messages",
+          filter: `ticket_id=eq.${ticketId}`,
+        },
+        async () => {
+          await loadMessages();
+        }
+      )
+      .subscribe();
+
+    const ticketChannel = supabase
+      .channel(`ticket-status-${ticketId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "tickets",
+          filter: `id=eq.${ticketId}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as { status?: TicketStatus }).status;
+          if (newStatus) setLiveStatus(newStatus);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(ticketChannel);
+    };
+  }, [ticketId, loadMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,7 +100,7 @@ export function TicketChatPanel({
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!text.trim() || !canSend) return;
+    if (!text.trim() || !canSendMessage) return;
     setSending(true);
     try {
       const res = await fetch(`/api/tickets/${ticketId}/messages`, {
@@ -63,7 +114,10 @@ export function TicketChatPanel({
         return;
       }
       setText("");
-      setMessages((prev) => [...prev, data.message]);
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === data.message.id)) return prev;
+        return [...prev, data.message];
+      });
     } catch {
       toast.error("Failed to send message");
     } finally {
@@ -75,6 +129,9 @@ export function TicketChatPanel({
     <Card className="flex h-[min(520px,70vh)] flex-col lg:sticky lg:top-6">
       <CardHeader className="shrink-0 border-b border-slate-100 pb-3">
         <CardTitle className="text-base">Messages</CardTitle>
+        {messagingClosed && (
+          <p className="text-xs text-slate-500">This ticket is closed</p>
+        )}
       </CardHeader>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
@@ -124,7 +181,7 @@ export function TicketChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      {canSend ? (
+      {canSendMessage ? (
         <form
           onSubmit={handleSend}
           className="shrink-0 border-t border-slate-100 p-3"

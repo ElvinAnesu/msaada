@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { SessionUser, Ticket, Profile, Department } from "@/lib/types";
+import { SessionUser, Ticket, Profile, Department, Category } from "@/lib/types";
+import { adminNav } from "@/lib/admin-nav";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { TicketCard } from "@/components/tickets/ticket-card";
 import { Button } from "@/components/ui/button";
@@ -10,18 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/states";
 
-const adminNav = [
-  { href: "/dashboard/admin", label: "Tickets", icon: "🎫" },
-  { href: "/dashboard/admin/users", label: "Users", icon: "👥" },
-  { href: "/dashboard/admin/customers", label: "Customers", icon: "👤" },
-  { href: "/dashboard/admin/departments", label: "Departments", icon: "🏢" },
-  { href: "/dashboard/admin/reports", label: "Reports", icon: "📊" },
-];
-
-export default function AdminDashboard({ user }: { user: SessionUser }) {
+export default function AdminTickets({ user }: { user: SessionUser }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [agents, setAgents] = useState<Profile[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: "",
@@ -38,9 +32,11 @@ export default function AdminDashboard({ user }: { user: SessionUser }) {
     Promise.all([
       fetch("/api/users/agents").then((r) => r.json()),
       fetch("/api/departments").then((r) => r.json()),
-    ]).then(([agentsData, deptsData]) => {
+      fetch("/api/categories").then((r) => r.json()),
+    ]).then(([agentsData, deptsData, catsData]) => {
       setAgents(agentsData.agents || []);
       setDepartments(deptsData.departments || []);
+      setCategories(catsData.categories || []);
     });
   }, []);
 
@@ -131,7 +127,6 @@ export default function AdminDashboard({ user }: { user: SessionUser }) {
               { value: "assigned", label: "Assigned" },
               { value: "in_progress", label: "In Progress" },
               { value: "escalated", label: "Escalated" },
-              { value: "resolved", label: "Resolved" },
               { value: "closed", label: "Closed" },
             ]}
             value={filters.status}
@@ -153,6 +148,19 @@ export default function AdminDashboard({ user }: { user: SessionUser }) {
             value={filters.priority}
             onChange={(e) =>
               setFilters((f) => ({ ...f, priority: e.target.value }))
+            }
+          />
+        </div>
+        <div className="min-w-[130px] flex-1">
+          <Select
+            label="Category"
+            options={[
+              { value: "", label: "All" },
+              ...categories.map((c) => ({ value: c.name, label: c.name })),
+            ]}
+            value={filters.category}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, category: e.target.value }))
             }
           />
         </div>
@@ -220,7 +228,7 @@ export default function AdminDashboard({ user }: { user: SessionUser }) {
                     }}
                     disabled={reassigning === ticket.id}
                   />
-                  {["resolved", "closed"].includes(ticket.status) && (
+                  {ticket.status === "closed" && (
                     <Button
                       size="sm"
                       variant="outline"

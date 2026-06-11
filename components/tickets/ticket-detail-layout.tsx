@@ -1,10 +1,12 @@
 "use client";
 
 import { TicketChatPanel } from "@/components/tickets/ticket-chat-panel";
+import { TicketStatus } from "@/lib/types";
 
 interface TicketDetailLayoutProps {
   ticketId: string;
   currentUserId: string;
+  ticketStatus: TicketStatus;
   canSendMessages?: boolean;
   children: React.ReactNode;
 }
@@ -12,6 +14,7 @@ interface TicketDetailLayoutProps {
 export function TicketDetailLayout({
   ticketId,
   currentUserId,
+  ticketStatus,
   canSendMessages = true,
   children,
 }: TicketDetailLayoutProps) {
@@ -22,6 +25,7 @@ export function TicketDetailLayout({
         <TicketChatPanel
           ticketId={ticketId}
           currentUserId={currentUserId}
+          ticketStatus={ticketStatus}
           canSend={canSendMessages}
         />
       </div>

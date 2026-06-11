@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Ticket } from "@/lib/types";
-import { DEFAULT_TICKET_CATEGORY, TICKET_CATEGORIES } from "@/lib/utils";
+import { Category, Ticket } from "@/lib/types";
+import { DEFAULT_TICKET_CATEGORY } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/states";
 
 interface TicketCategoryEditorProps {
   ticketId: string;
@@ -19,10 +20,19 @@ export function TicketCategoryEditor({
   currentCategory,
   onUpdated,
 }: TicketCategoryEditorProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [category, setCategory] = useState(
     currentCategory === DEFAULT_TICKET_CATEGORY ? "" : currentCategory
   );
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => setCategories(data.categories || []))
+      .finally(() => setLoadingCategories(false));
+  }, []);
 
   async function handleSave() {
     if (!category) {
@@ -63,20 +73,24 @@ export function TicketCategoryEditor({
             : currentCategory}
         </span>
       </p>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <Select
-            label="Set category"
-            placeholder="Select category"
-            options={TICKET_CATEGORIES.map((c) => ({ value: c, label: c }))}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
+      {loadingCategories ? (
+        <LoadingSpinner />
+      ) : (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Select
+              label="Set category"
+              placeholder="Select category"
+              options={categories.map((c) => ({ value: c.name, label: c.name }))}
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleSave} loading={saving}>
+            Save Category
+          </Button>
         </div>
-        <Button onClick={handleSave} loading={saving}>
-          Save Category
-        </Button>
-      </div>
+      )}
     </Card>
   );
 }

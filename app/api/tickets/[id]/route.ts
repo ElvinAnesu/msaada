@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth, apiError, apiSuccess, zodFirstError } from "@/lib/api-helpers";
 import { updateCategorySchema } from "@/lib/validations/schemas";
-import { TICKET_CATEGORIES } from "@/lib/utils";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -98,8 +97,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       (auth.user.role === "agent" && ticket.agent_id === auth.user.id);
 
     if (!allowed) return apiError("Forbidden", 403);
-    if (!["resolved", "closed"].includes(ticket.status)) {
-      return apiError("Only resolved or closed tickets can be reopened");
+    if (ticket.status !== "closed") {
+      return apiError("Only closed tickets can be reopened");
     }
 
     const { data: updated, error: updateError } = await supabase
@@ -122,7 +121,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       "assigned",
       "in_progress",
       "escalated",
-      "resolved",
       "closed",
     ];
     const currentIdx = order.indexOf(ticket.status);
@@ -170,9 +168,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return apiError(zodFirstError(parsed.error));
     }
     const { category } = parsed.data;
-    if (!TICKET_CATEGORIES.includes(category as (typeof TICKET_CATEGORIES)[number])) {
-      return apiError("Invalid category");
-    }
+    const { data: validCategory, error: categoryError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("name", category)
+      .maybeSingle();
+
+    if (categoryError) return apiError(categoryError.message);
+    if (!validCategory) return apiError("Invalid category");
     const { data: updated, error: updateError } = await supabase
       .from("tickets")
       .update({ category })

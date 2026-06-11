@@ -13,9 +13,12 @@ export const STATUS_ORDER: TicketStatus[] = [
   "assigned",
   "in_progress",
   "escalated",
-  "resolved",
   "closed",
 ];
+
+export function isTicketClosed(status: TicketStatus): boolean {
+  return status === "closed";
+}
 
 export function getNextStatus(current: TicketStatus): TicketStatus | null {
   const idx = STATUS_ORDER.indexOf(current);
@@ -38,7 +41,6 @@ export function statusBadgeClass(status: TicketStatus): string {
     assigned: "bg-teal-100 text-teal-800 ring-teal-200",
     in_progress: "bg-purple-100 text-purple-800 ring-purple-200",
     escalated: "bg-amber-100 text-amber-800 ring-amber-200",
-    resolved: "bg-green-100 text-green-800 ring-green-200",
     closed: "bg-slate-100 text-slate-800 ring-slate-200",
   };
   return map[status];
@@ -82,12 +84,3 @@ export function formatCategoryLabel(category: string): string {
   return category === DEFAULT_TICKET_CATEGORY ? "Not classified" : category;
 }
 
-export const TICKET_CATEGORIES = [
-  "General Inquiry",
-  "Technical Support",
-  "Billing",
-  "Account Issue",
-  "Feature Request",
-  "Bug Report",
-  "Other",
-] as const;

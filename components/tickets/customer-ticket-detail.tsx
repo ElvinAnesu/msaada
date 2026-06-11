@@ -55,15 +55,15 @@ export function CustomerTicketDetail({ ticketId, user }: CustomerTicketDetailPro
   if (loading) return <LoadingSpinner />;
   if (!ticket) return <p className="text-slate-500">Ticket not found</p>;
 
-  const canReopen = ["resolved", "closed"].includes(ticket.status);
-  const canRemind =
-    !!ticket.agent_id && !["resolved", "closed"].includes(ticket.status);
+  const canReopen = ticket.status === "closed";
+  const canRemind = !!ticket.agent_id && ticket.status !== "closed";
 
   return (
     <TicketDetailLayout
       key={chatKey}
       ticketId={ticketId}
       currentUserId={user.id}
+      ticketStatus={ticket.status}
     >
       <TicketDetailView ticket={ticket} showAgentContact hideNotes />
 

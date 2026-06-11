@@ -14,10 +14,14 @@ interface AdminTicketDetailProps {
 
 export function AdminTicketDetail({ ticket: initialTicket, user }: AdminTicketDetailProps) {
   const [ticket, setTicket] = useState(initialTicket);
-  const canReopen = ["resolved", "closed"].includes(ticket.status);
+  const canReopen = ticket.status === "closed";
 
   return (
-    <TicketDetailLayout ticketId={ticket.id} currentUserId={user.id}>
+    <TicketDetailLayout
+      ticketId={ticket.id}
+      currentUserId={user.id}
+      ticketStatus={ticket.status}
+    >
       <TicketDetailView
         ticket={ticket}
         showCustomerContact

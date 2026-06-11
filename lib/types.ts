@@ -7,7 +7,6 @@ export type TicketStatus =
   | "assigned"
   | "in_progress"
   | "escalated"
-  | "resolved"
   | "closed";
 
 export interface Profile {
@@ -24,6 +23,12 @@ export interface Profile {
 }
 
 export interface Department {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface Category {
   id: string;
   name: string;
   created_at: string;

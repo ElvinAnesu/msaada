@@ -4,20 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { SessionUser, Profile, Department } from "@/lib/types";
 import { formatDate, formatTicketNumber } from "@/lib/utils";
+import { adminNav } from "@/lib/admin-nav";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/states";
-
-const adminNav = [
-  { href: "/dashboard/admin", label: "Tickets", icon: "🎫" },
-  { href: "/dashboard/admin/users", label: "Users", icon: "👥" },
-  { href: "/dashboard/admin/customers", label: "Customers", icon: "👤" },
-  { href: "/dashboard/admin/departments", label: "Departments", icon: "🏢" },
-  { href: "/dashboard/admin/reports", label: "Reports", icon: "📊" },
-];
 
 interface ReportRow {
   ticket_number: number;
@@ -158,7 +151,6 @@ export default function AdminReportsPage({ user }: { user: SessionUser }) {
               { value: "assigned", label: "Assigned" },
               { value: "in_progress", label: "In Progress" },
               { value: "escalated", label: "Escalated" },
-              { value: "resolved", label: "Resolved" },
               { value: "closed", label: "Closed" },
             ]}
             value={filters.status}

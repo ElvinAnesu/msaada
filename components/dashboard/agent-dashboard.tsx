@@ -1,108 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { SessionUser, Ticket } from "@/lib/types";
+import Link from "next/link";
+import { SessionUser } from "@/lib/types";
+import { agentNav } from "@/lib/agent-nav";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { TicketList } from "@/components/tickets/ticket-card";
-import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
 
-const agentNav = [
-  { href: "/dashboard/agent", label: "Dashboard", icon: "📋" },
+interface AgentStats {
+  unassigned: number;
+  my_open: number;
+  my_closed: number;
+  in_progress: number;
+}
+
+const statCards = [
+  {
+    key: "unassigned" as const,
+    label: "Unassigned",
+    href: "/dashboard/agent/unassigned",
+    color: "border-amber-200 bg-amber-50 text-amber-900",
+  },
+  {
+    key: "my_open" as const,
+    label: "My Open",
+    href: "/dashboard/agent/my-tickets",
+    color: "border-teal-200 bg-teal-50 text-teal-900",
+  },
+  {
+    key: "in_progress" as const,
+    label: "In Progress",
+    href: "/dashboard/agent/my-tickets",
+    color: "border-purple-200 bg-purple-50 text-purple-900",
+  },
+  {
+    key: "my_closed" as const,
+    label: "My Closed",
+    href: "/dashboard/agent/my-tickets",
+    color: "border-slate-200 bg-slate-50 text-slate-900",
+  },
 ];
 
 export default function AgentDashboard({ user }: { user: SessionUser }) {
-  const router = useRouter();
-  const [tab, setTab] = useState<"unassigned" | "my">("unassigned");
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [stats, setStats] = useState<AgentStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pickingUp, setPickingUp] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (tab === "unassigned") params.set("unassigned", "true");
-    else params.set("my_tickets", "true");
-    fetch(`/api/tickets?${params}`)
+    fetch("/api/agents/stats")
       .then((r) => r.json())
-      .then((data) => setTickets(data.tickets || []))
+      .then((data) => setStats(data.stats || null))
       .finally(() => setLoading(false));
-  }, [tab]);
-
-  async function handlePickup(ticketId: string) {
-    setPickingUp(ticketId);
-    try {
-      const res = await fetch(`/api/tickets/${ticketId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "pickup" }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        toast.error(json.error || "Failed to pick up ticket");
-        return;
-      }
-      toast.success("Ticket assigned to you");
-      router.push(`/dashboard/agent/tickets/${ticketId}`);
-    } catch {
-      toast.error("Failed to pick up ticket");
-    } finally {
-      setPickingUp(null);
-    }
-  }
+  }, []);
 
   return (
     <DashboardLayout user={user} navItems={agentNav}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Agent Dashboard</h1>
-        <p className="text-sm text-slate-600">Manage support tickets</p>
-      </div>
-
-      <div className="mb-6 flex gap-2 border-b border-slate-200">
-        {(["unassigned", "my"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "px-4 py-2 text-sm font-medium capitalize transition-colors",
-              tab === t
-                ? "border-b-2 border-primary text-primary"
-                : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            {t === "unassigned" ? "Unassigned Queue" : "My Tickets"}
-          </button>
-        ))}
+        <p className="text-sm text-slate-600">Overview of your support queue</p>
       </div>
 
       {loading ? (
         <LoadingSpinner />
       ) : (
-        <TicketList
-          tickets={tickets}
-          hrefPrefix="/dashboard/agent/tickets"
-          showCustomer
-          emptyTitle={
-            tab === "unassigned" ? "No unassigned tickets" : "No tickets assigned to you"
-          }
-          renderAction={
-            tab === "unassigned"
-              ? (ticket) => (
-                  <Button
-                    size="sm"
-                    onClick={() => handlePickup(ticket.id)}
-                    loading={pickingUp === ticket.id}
-                  >
-                    Pick up
-                  </Button>
-                )
-              : undefined
-          }
-        />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {statCards.map((card) => (
+            <Link
+              key={card.key}
+              href={card.href}
+              className={cn(
+                "rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md",
+                card.color
+              )}
+            >
+              <p className="text-sm font-medium opacity-80">{card.label}</p>
+              <p className="mt-2 text-3xl font-bold">
+                {stats?.[card.key] ?? 0}
+              </p>
+            </Link>
+          ))}
+        </div>
       )}
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/dashboard/agent/unassigned"
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+        >
+          <h2 className="font-semibold text-slate-900">Unassigned Tickets</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            View and pick up tickets waiting in the queue
+          </p>
+        </Link>
+        <Link
+          href="/dashboard/agent/my-tickets"
+          className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+        >
+          <h2 className="font-semibold text-slate-900">My Tickets</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Manage your open and closed assigned tickets
+          </p>
+        </Link>
+      </div>
     </DashboardLayout>
   );
 }

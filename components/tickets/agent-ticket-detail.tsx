@@ -92,12 +92,16 @@ export function AgentTicketDetail({ ticketId, user }: AgentTicketDetailProps) {
   if (loading) return <LoadingSpinner />;
   if (!ticket) return <p className="text-slate-500">Ticket not found</p>;
 
-  const canReopen = ["resolved", "closed"].includes(ticket.status);
+  const canReopen = ticket.status === "closed";
   const isAssigned = ticket.agent_id !== null;
   const canUpdateStatus = isAssigned || ticket.agent_id === null;
 
   return (
-    <TicketDetailLayout ticketId={ticketId} currentUserId={user.id}>
+    <TicketDetailLayout
+      ticketId={ticketId}
+      currentUserId={user.id}
+      ticketStatus={ticket.status}
+    >
       <TicketDetailView ticket={ticket} showCustomerContact />
 
       <TicketCategoryEditor

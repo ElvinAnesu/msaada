@@ -1,11 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
+import { agentNav } from "@/lib/agent-nav";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { AgentTicketDetail } from "@/components/tickets/agent-ticket-detail";
-
-const agentNav = [
-  { href: "/dashboard/agent", label: "Dashboard", icon: "📋" },
-];
 
 type PageProps = { params: Promise<{ id: string }> };
 

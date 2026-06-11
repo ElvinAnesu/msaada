@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
   const customer_id = searchParams.get("customer_id");
   const unassigned = searchParams.get("unassigned");
   const my_tickets = searchParams.get("my_tickets");
+  const ticket_state = searchParams.get("ticket_state");
 
   const supabase = createAdminClient();
   let query = supabase
@@ -40,6 +41,11 @@ export async function GET(request: NextRequest) {
       query = query.eq("status", "pending").is("agent_id", null);
     } else if (my_tickets === "true") {
       query = query.eq("agent_id", user.id);
+      if (ticket_state === "open") {
+        query = query.neq("status", "closed");
+      } else if (ticket_state === "closed") {
+        query = query.eq("status", "closed");
+      }
     }
   }
 

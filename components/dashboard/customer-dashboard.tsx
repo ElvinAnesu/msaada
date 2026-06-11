@@ -20,7 +20,6 @@ const STATUS_OPTIONS = [
   { value: "assigned", label: "Assigned" },
   { value: "in_progress", label: "In Progress" },
   { value: "escalated", label: "Escalated" },
-  { value: "resolved", label: "Resolved" },
   { value: "closed", label: "Closed" },
 ];
 
