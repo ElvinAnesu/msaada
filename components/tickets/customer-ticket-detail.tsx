@@ -25,7 +25,9 @@ export function CustomerTicketDetail({ ticketId, user }: CustomerTicketDetailPro
   useEffect(() => {
     fetch(`/api/tickets/${ticketId}`)
       .then((r) => r.json())
-      .then((data) => setTicket(data.ticket))
+      .then((data) => {
+        if (data.ticket) setTicket(data.ticket);
+      })
       .finally(() => setLoading(false));
   }, [ticketId]);
 

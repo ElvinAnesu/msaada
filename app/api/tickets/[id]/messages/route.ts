@@ -41,7 +41,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     .order("created_at", { ascending: true });
 
   if (error) return apiError(error.message, 500);
-  return apiSuccess({ messages: data || [] });
+  return apiSuccess({
+    messages: data || [],
+    status: access.ticket.status,
+  });
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {

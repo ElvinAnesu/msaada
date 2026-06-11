@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TicketMessage, TicketStatus } from "@/lib/types";
-import { createBrowserClient } from "@/lib/supabase/client";
 import { formatDate, isTicketClosed } from "@/lib/utils";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+const POLL_INTERVAL_MS = 5000;
 
 interface TicketChatPanelProps {
   ticketId: string;
@@ -36,63 +37,26 @@ export function TicketChatPanel({
   const messagingClosed = isTicketClosed(liveStatus);
   const canSendMessage = canSend && !messagingClosed;
 
-  const loadMessages = useCallback(async () => {
+  const loadChat = useCallback(async () => {
     try {
       const res = await fetch(`/api/tickets/${ticketId}/messages`);
       const data = await res.json();
-      if (res.ok) setMessages(data.messages || []);
+      if (res.ok) {
+        setMessages(data.messages || []);
+        if (data.status) setLiveStatus(data.status);
+      }
     } catch {
-      // silent fetch failure
+      // silent poll failure
     } finally {
       setLoading(false);
     }
   }, [ticketId]);
 
   useEffect(() => {
-    loadMessages();
-  }, [loadMessages]);
-
-  useEffect(() => {
-    const supabase = createBrowserClient();
-
-    const messagesChannel = supabase
-      .channel(`ticket-messages-${ticketId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "ticket_messages",
-          filter: `ticket_id=eq.${ticketId}`,
-        },
-        async () => {
-          await loadMessages();
-        }
-      )
-      .subscribe();
-
-    const ticketChannel = supabase
-      .channel(`ticket-status-${ticketId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "tickets",
-          filter: `id=eq.${ticketId}`,
-        },
-        (payload) => {
-          const newStatus = (payload.new as { status?: TicketStatus }).status;
-          if (newStatus) setLiveStatus(newStatus);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(messagesChannel);
-      supabase.removeChannel(ticketChannel);
-    };
-  }, [ticketId, loadMessages]);
+    loadChat();
+    const interval = setInterval(loadChat, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [loadChat]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
