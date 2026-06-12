@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SessionUser, Ticket } from "@/lib/types";
 import { agentNav } from "@/lib/agent-nav";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { TicketList } from "@/components/tickets/ticket-card";
 import { Button } from "@/components/ui/button";
@@ -16,13 +17,21 @@ export default function AgentUnassignedTickets({ user }: { user: SessionUser }) 
   const [loading, setLoading] = useState(true);
   const [pickingUp, setPickingUp] = useState<string | null>(null);
 
-  useEffect(() => {
-    setLoading(true);
+  const loadTickets = useCallback((showSpinner = false) => {
+    if (showSpinner) setLoading(true);
     fetch("/api/tickets?unassigned=true")
       .then((r) => r.json())
       .then((data) => setTickets(data.tickets || []))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadTickets(true);
+  }, [loadTickets]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") loadTickets();
+  });
 
   async function handlePickup(ticketId: string) {
     setPickingUp(ticketId);

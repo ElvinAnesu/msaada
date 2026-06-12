@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SessionUser, Ticket } from "@/lib/types";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { TicketDetailView } from "@/components/tickets/ticket-detail";
 import { TicketCategoryEditor } from "@/components/tickets/ticket-category-editor";
 import { TicketStatusUpdater } from "@/components/tickets/ticket-status-updater";
@@ -37,6 +38,13 @@ export function AgentTicketDetail({ ticketId, user }: AgentTicketDetailProps) {
   useEffect(() => {
     loadTicket();
   }, [loadTicket]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") {
+      const id = (event.new?.id ?? event.old?.id) as string | undefined;
+      if (id === ticketId) loadTicket();
+    }
+  });
 
   async function handleReopen() {
     setReopening(true);

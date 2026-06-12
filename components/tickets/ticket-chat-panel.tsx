@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { TicketMessage, TicketStatus } from "@/lib/types";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { formatDate, isTicketClosed } from "@/lib/utils";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const POLL_INTERVAL_MS = 5000;
 
 interface TicketChatPanelProps {
   ticketId: string;
@@ -54,9 +53,20 @@ export function TicketChatPanel({
 
   useEffect(() => {
     loadChat();
-    const interval = setInterval(loadChat, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
   }, [loadChat]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "ticket_messages") {
+      const msgTicketId = event.new?.ticket_id as string | undefined;
+      if (msgTicketId === ticketId) loadChat();
+    }
+    if (event.table === "tickets") {
+      const ticketIdChanged =
+        (event.new?.id as string | undefined) === ticketId ||
+        (event.old?.id as string | undefined) === ticketId;
+      if (ticketIdChanged) loadChat();
+    }
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

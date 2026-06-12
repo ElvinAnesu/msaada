@@ -67,6 +67,17 @@ export const createAgentSchema = z.object({
   department_id: z.string().uuid("Please select a department"),
 });
 
+export const createAdminSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
+  full_name: z.string().min(2, "Full name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(7, "Phone number is required"),
+  password: z.string().min(4, "Password must be at least 4 characters"),
+});
+
 export const departmentSchema = z.object({
   name: z.string().min(2, "Department name is required"),
 });
@@ -130,6 +141,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type CreateTicketInput = z.infer<typeof createTicketSchema>;
 export type GuestTicketInput = z.infer<typeof guestTicketSchema>;
 export type CreateAgentInput = z.infer<typeof createAgentSchema>;
+export type CreateAdminInput = z.infer<typeof createAdminSchema>;
 export type DepartmentInput = z.infer<typeof departmentSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;

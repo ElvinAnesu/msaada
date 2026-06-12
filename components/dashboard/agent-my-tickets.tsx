@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SessionUser, Ticket } from "@/lib/types";
 import { agentNav } from "@/lib/agent-nav";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { TicketList } from "@/components/tickets/ticket-card";
 import { LoadingSpinner } from "@/components/ui/states";
@@ -13,17 +14,28 @@ export default function AgentMyTickets({ user }: { user: SessionUser }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const loadTickets = useCallback(
+    (showSpinner = false) => {
+      if (showSpinner) setLoading(true);
+      const params = new URLSearchParams({
+        my_tickets: "true",
+        ticket_state: tab,
+      });
+      fetch(`/api/tickets?${params}`)
+        .then((r) => r.json())
+        .then((data) => setTickets(data.tickets || []))
+        .finally(() => setLoading(false));
+    },
+    [tab]
+  );
+
   useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      my_tickets: "true",
-      ticket_state: tab,
-    });
-    fetch(`/api/tickets?${params}`)
-      .then((r) => r.json())
-      .then((data) => setTickets(data.tickets || []))
-      .finally(() => setLoading(false));
-  }, [tab]);
+    loadTickets(true);
+  }, [loadTickets]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") loadTickets();
+  });
 
   return (
     <DashboardLayout user={user} navItems={agentNav}>

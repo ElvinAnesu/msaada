@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SessionUser, Ticket } from "@/lib/types";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { TicketList } from "@/components/tickets/ticket-card";
 import { Button } from "@/components/ui/button";
@@ -28,15 +29,26 @@ export default function CustomerDashboard({ user }: { user: SessionUser }) {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
 
+  const loadTickets = useCallback(
+    (showSpinner = false) => {
+      if (showSpinner) setLoading(true);
+      const params = new URLSearchParams();
+      if (status) params.set("status", status);
+      fetch(`/api/tickets?${params}`)
+        .then((r) => r.json())
+        .then((data) => setTickets(data.tickets || []))
+        .finally(() => setLoading(false));
+    },
+    [status]
+  );
+
   useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (status) params.set("status", status);
-    fetch(`/api/tickets?${params}`)
-      .then((r) => r.json())
-      .then((data) => setTickets(data.tickets || []))
-      .finally(() => setLoading(false));
-  }, [status]);
+    loadTickets(true);
+  }, [loadTickets]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") loadTickets();
+  });
 
   return (
     <DashboardLayout user={user} navItems={customerNav}>

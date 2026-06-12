@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { SessionUser } from "@/lib/types";
 import { agentNav } from "@/lib/agent-nav";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { LoadingSpinner } from "@/components/ui/states";
 import { cn } from "@/lib/utils";
@@ -46,12 +47,20 @@ export default function AgentDashboard({ user }: { user: SessionUser }) {
   const [stats, setStats] = useState<AgentStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
     fetch("/api/agents/stats")
       .then((r) => r.json())
       .then((data) => setStats(data.stats || null))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") loadStats();
+  });
 
   return (
     <DashboardLayout user={user} navItems={agentNav}>

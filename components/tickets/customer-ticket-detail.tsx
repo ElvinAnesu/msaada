@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SessionUser, Ticket } from "@/lib/types";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { TicketDetailView } from "@/components/tickets/ticket-detail";
 import { TicketDetailLayout } from "@/components/tickets/ticket-detail-layout";
 import { TicketReminderButton } from "@/components/tickets/ticket-reminder-button";
@@ -17,7 +18,7 @@ export function CustomerTicketDetail({ ticketId, user }: CustomerTicketDetailPro
   const [loading, setLoading] = useState(true);
   const [chatKey, setChatKey] = useState(0);
 
-  useEffect(() => {
+  const loadTicket = useCallback(() => {
     fetch(`/api/tickets/${ticketId}`)
       .then((r) => r.json())
       .then((data) => {
@@ -25,6 +26,17 @@ export function CustomerTicketDetail({ ticketId, user }: CustomerTicketDetailPro
       })
       .finally(() => setLoading(false));
   }, [ticketId]);
+
+  useEffect(() => {
+    loadTicket();
+  }, [loadTicket]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") {
+      const id = (event.new?.id ?? event.old?.id) as string | undefined;
+      if (id === ticketId) loadTicket();
+    }
+  });
 
   if (loading) return <LoadingSpinner />;
   if (!ticket) return <p className="text-slate-500">Ticket not found</p>;

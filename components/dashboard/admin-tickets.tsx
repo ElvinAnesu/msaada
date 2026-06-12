@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SessionUser, Ticket, Profile, Department, Category } from "@/lib/types";
 import { adminNav } from "@/lib/admin-nav";
+import { useRealtimeStream } from "@/lib/hooks/use-realtime-stream";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { TicketCard } from "@/components/tickets/ticket-card";
 import { Button } from "@/components/ui/button";
@@ -40,17 +41,28 @@ export default function AdminTickets({ user }: { user: SessionUser }) {
     });
   }, []);
 
+  const loadTickets = useCallback(
+    (showSpinner = false) => {
+      if (showSpinner) setLoading(true);
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v) params.set(k, v);
+      });
+      fetch(`/api/tickets?${params}`)
+        .then((r) => r.json())
+        .then((data) => setTickets(data.tickets || []))
+        .finally(() => setLoading(false));
+    },
+    [filters]
+  );
+
   useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-    });
-    fetch(`/api/tickets?${params}`)
-      .then((r) => r.json())
-      .then((data) => setTickets(data.tickets || []))
-      .finally(() => setLoading(false));
-  }, [filters]);
+    loadTickets(true);
+  }, [loadTickets]);
+
+  useRealtimeStream((event) => {
+    if (event.table === "tickets") loadTickets();
+  });
 
   async function handleReassign(ticketId: string, agentId: string) {
     setReassigning(ticketId);
