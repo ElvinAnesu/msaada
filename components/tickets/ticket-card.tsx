@@ -23,15 +23,17 @@ export function TicketCard({
 }: TicketCardProps) {
   return (
     <Card className="transition-shadow hover:shadow-md">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <span className="font-mono text-sm font-semibold text-primary">
+          {formatTicketNumber(ticket.ticket_number)}
+        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <StatusBadge status={ticket.status} prominent />
+          <PriorityBadge priority={ticket.priority} prominent />
+        </div>
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <Link href={href} className="min-w-0 flex-1">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm font-semibold text-primary">
-              {formatTicketNumber(ticket.ticket_number)}
-            </span>
-            <StatusBadge status={ticket.status} />
-            <PriorityBadge priority={ticket.priority} />
-          </div>
           <h3 className="truncate text-base font-medium text-slate-900">
             {ticket.subject}
           </h3>

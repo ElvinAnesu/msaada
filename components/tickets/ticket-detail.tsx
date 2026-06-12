@@ -20,12 +20,18 @@ export function TicketDetailView({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle>{formatTicketNumber(ticket.ticket_number)}</CardTitle>
-            <StatusBadge status={ticket.status} />
-            <PriorityBadge priority={ticket.priority} />
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <CardTitle>{formatTicketNumber(ticket.ticket_number)}</CardTitle>
+              <h2 className="mt-2 text-xl font-semibold text-slate-900">
+                {ticket.subject}
+              </h2>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <StatusBadge status={ticket.status} prominent />
+              <PriorityBadge priority={ticket.priority} prominent />
+            </div>
           </div>
-          <h2 className="text-xl font-semibold text-slate-900">{ticket.subject}</h2>
         </CardHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <InfoItem label="Category" value={formatCategoryLabel(ticket.category)} />

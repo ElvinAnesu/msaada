@@ -9,17 +9,42 @@ import {
 } from "@/lib/utils";
 import { Badge } from "./badge";
 
-export function StatusBadge({ status }: { status: TicketStatus }) {
+export function StatusBadge({
+  status,
+  prominent,
+}: {
+  status: TicketStatus;
+  prominent?: boolean;
+}) {
   return (
-    <Badge className={statusBadgeClass(status)}>
+    <Badge
+      className={cn(
+        statusBadgeClass(status),
+        prominent &&
+          "px-3 py-1 text-sm font-bold uppercase tracking-wide shadow-sm ring-2"
+      )}
+    >
       {formatStatusLabel(status)}
     </Badge>
   );
 }
 
-export function PriorityBadge({ priority }: { priority: TicketPriority }) {
+export function PriorityBadge({
+  priority,
+  prominent,
+}: {
+  priority: TicketPriority;
+  prominent?: boolean;
+}) {
   return (
-    <Badge className={priorityBadgeClass(priority)}>{priority}</Badge>
+    <Badge
+      className={cn(
+        priorityBadgeClass(priority),
+        prominent && "px-3 py-1 text-sm font-bold uppercase tracking-wide shadow-sm ring-2"
+      )}
+    >
+      {priority}
+    </Badge>
   );
 }
 
